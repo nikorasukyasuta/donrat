@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: donrat-mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo-init:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mongosh --host mongo:27017 --eval '
+          try {
+            rs.status();
+          } catch (e) {
+            rs.initiate({_id: "rs0", members: [{_id: 0, host: "mongo:27017"}]});
+          }
+        '
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: donrat-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+
+volumes:
+  mongo-data:
