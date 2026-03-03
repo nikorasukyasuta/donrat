@@ -7,11 +7,6 @@ Production-ready Discord slash-command casino bot where every user is a rat, and
 - Slash-command only interaction model.
 - MongoDB-backed wallet ledger with transaction history.
 - Deterministic game behavior using seeded RNG.
-- Protected user rule for `hellomimiz` (or configured identity):
-  - Never loses credits.
-  - Never has credits deducted.
-  - Can still win credits.
-  - Can still trade credits without balance decrease.
 - Don Rat sarcastic persona responses.
 
 ## Project Structure
