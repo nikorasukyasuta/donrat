@@ -124,6 +124,37 @@ This starts:
 - `mongo-init` for replica set initialization
 - `bot` service
 
+## Deploy to EC2 via ECR
+
+Prerequisites:
+
+- Local machine: `docker`, `aws` CLI, and SSH access to the EC2 instance.
+- EC2 instance: `docker`, Docker Compose plugin (`docker compose`), and `aws` CLI.
+- IAM permissions for ECR push/pull on both local and EC2 contexts.
+
+1. Build and deploy in one command:
+
+```bash
+scripts/deploy_ec2_ecr.sh \
+ <aws_account_id> <aws_region> <ecr_repo> <image_tag> \
+ <ec2_user> <ec2_host> <ssh_key_path> <ec2_app_dir>
+```
+
+Example:
+
+```bash
+scripts/deploy_ec2_ecr.sh \
+ 123456789012 us-east-1 donrat-bot v1 \
+ ubuntu ec2-12-34-56-78.compute-1.amazonaws.com ~/.ssh/my-key.pem /opt/donrat
+```
+
+What it does:
+
+- Creates ECR repo if missing.
+- Builds and pushes your bot image to ECR.
+- Copies `docker-compose.ec2.yml` (as `docker-compose.yml`) and `.env` to EC2.
+- Pulls the image and starts containers on EC2.
+
 ## Make Targets
 
 - `make tidy` – resolve dependencies
@@ -132,6 +163,8 @@ This starts:
 - `make test` – run tests
 - `make docker-up` – build/start containers
 - `make docker-down` – stop containers and remove volumes
+- `make docker-build ECR_REPO=donrat-bot IMAGE_TAG=v1` – build tagged image locally
+- `make docker-tag ECR_REPO=donrat-bot IMAGE_TAG=v1 IMAGE_URI=<full-ecr-image-uri>` – tag image for push
 
 ## Startup Behavior
 

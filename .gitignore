@@ -15,3 +15,8 @@ vendor/
 
 .env
 .scrawl
+
+personal.pem
+personal.pem:Zone.Identifier
+
+aws

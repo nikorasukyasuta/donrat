@@ -52,18 +52,33 @@ func (s *Store) EnsureWallet(ctx context.Context, user models.UserRef, defaultBa
 			"balance":        defaultBalance,
 			"last_operation": "wallet_initialized",
 			"created_at":     now,
-			"updated_at":     now,
 		},
 	}
 
 	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
 	res := s.Wallets.FindOneAndUpdate(ctx, bson.M{"user_id": user.ID}, update, opts)
-	if res.Err() != nil {
+	if res.Err() != nil && !errors.Is(res.Err(), mongo.ErrNoDocuments) {
 		return nil, fmt.Errorf("ensure wallet: %w", res.Err())
 	}
 
 	var wallet models.Wallet
 	if err := res.Decode(&wallet); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			// Create a new wallet explicitly if none exists
+			wallet = models.Wallet{
+				UserID:        user.ID,
+				Username:      user.Username,
+				Balance:       defaultBalance,
+				IsProtected:   isProtected,
+				LastOperation: "wallet_initialized",
+				CreatedAt:     now,
+				UpdatedAt:     now,
+			}
+			if _, err := s.Wallets.InsertOne(ctx, wallet); err != nil {
+				return nil, fmt.Errorf("insert wallet: %w", err)
+			}
+			return &wallet, nil
+		}
 		return nil, fmt.Errorf("decode wallet: %w", err)
 	}
 
